@@ -1,6 +1,6 @@
 # I2HS
 A prototype MaxSAT solver based on the *Implicit Ising Hitting Set*
-algorithm ($I^2$HS). It implements a traditional implicit hitting
+algorithm ($I^2$ HS). It implements a traditional implicit hitting
 algorithm for MaxSAT in which the SAT-part is handled using PySAT and
 the hitting set is solved using an Ising machine in the Fixstars Amplify cloud.
 
