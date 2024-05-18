@@ -1,0 +1,8 @@
+gurobi:
+  library_path: "/path/to/gurobi/library"
+
+amplify:
+  token: "your_amplify_token_here"
+
+settings:
+  annealing_time: 1000 # in seconds
