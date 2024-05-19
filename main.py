@@ -54,7 +54,7 @@ if __name__ == "__main__":
         print(f"o {len(hs)}")
         for v in range(n):
             if v % 25 == 0:
-                if i > 0:
+                if v > 0:
                     print()
                 print("v", end="")
             if v in hs:
