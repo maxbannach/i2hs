@@ -1,4 +1,5 @@
 from datetime import timedelta
+import tempfile, subprocess, os
 from amplify import (
     VariableGenerator,
     greater_equal,
@@ -50,6 +51,7 @@ class Hypergraph:
             if not any(v in e for v in result):
                 unhit.append(e)
         if len(unhit) > 0:
+            print("c recursion")
             h = Hypergraph(self.n, self.config)
             for e in unhit:
                 h.add_edge(e)
@@ -88,21 +90,78 @@ class Hypergraph:
         return imodel, mapping
 
     def _solve_model(self, model, mapping):
-        #client = GurobiClient(library_path=self.config['gurobi']['library_path'])
-        #client.parameters.time_limit = timedelta(seconds=self.config['settings']['annealing_time'])
+        if self.config['settings']['mode'] == "fixstar":
+            result = self._solve_with_fixstar(model, mapping)
+        elif self.config['settings']['mode'] == "gurobi":
+            result = self._solve_with_gurobi(model, mapping)
+        elif self.config['settings']['mode'] == "external":
+            result = self._solve_with_external_ipu(model, mapping)
+        else:
+            print("c Error: Unknown mode specified.")
+            return []
 
+        if self.config['settings']['mode'] != "external":
+            result = result.best.values
+        
+        return list(map(
+            lambda vq: vq[0],
+            filter(lambda vq: vq[0] < self.n and result[vq[1]] > 0.0001, enumerate(result))
+        ))
+
+
+    def _solve_with_gurobi(self, model, mapping):
+        client = GurobiClient(library_path=self.config['gurobi']['library_path'])
+        client.parameters.time_limit = timedelta(seconds=self.config['settings']['annealing_time'])
+        client.parameters.output_flag = 0
+        return solve(model, client)
+
+    def _solve_with_fixstar(self, model, mapping):
         client = FixstarsClient()
         client.token = self.config['amplify']['token']
         client.parameters.timeout = timedelta(seconds=self.config['settings']['annealing_time'])
         client.parameters.num_gpus = 1
+        return solve(model, client)
 
-        
-        result = solve(model, client)
-        return list(map(
-            lambda vq: vq[0],
-            filter(lambda vq: vq[0] < self.n and result.best.values[vq[1]] > 0.0001, enumerate(result.best.values))
-        ))
+    def _solve_with_external_ipu(self, model, mapping):    
+        # Write QUBO to a temporary file.
+        with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as temp_file:
+            temp_file.write(self._model_to_text(model))
+            temp_file.flush()
 
+        try:
+            result = subprocess.run(
+                self.config['external']['cmd']
+                + " "
+                + format(f"{self.config['settings']['annealing_time']}")
+                + " < " + temp_file.name,
+                shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE                
+            )
+            output = result.stdout
+            assignment = []
+            for line in output.splitlines():
+                if line.startswith("v"):
+                    for x in map(int, line.split(" ")[1:]):
+                        assignment.append(x)
+                       
+        except subprocess.CalledProcessError as e:
+            print("c Error executing the external IPU:", e)
+            sys.exit(1)
+        finally:
+            temp_file.close()
+            os.remove(temp_file.name)
+
+        return assignment
+
+    def _model_to_text(self, model):
+        buffer = []
+        terms = model.to_unconstrained_poly().as_dict()
+        for t in terms:
+            if len(t) == 1:
+                buffer.append(format(f"{terms[t]} {t[0]+1} 0"))
+            elif len(t) == 2:
+                buffer.append(f"{terms[t]} {t[0]+1} {t[1]+1} 0")
+        return "\n".join(buffer)
+    
     def __str__(self):
         buffer = []
         for v in range(self.n):
