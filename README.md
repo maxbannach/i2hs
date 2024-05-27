@@ -1,6 +1,6 @@
 # I2HS
 A prototype MaxSAT solver based on the *Implicit Ising Hitting Set*
-algorithm ($I^2$ HS). It implements a traditional implicit hitting
+algorithm (I2HS). It implements a traditional implicit hitting
 algorithm for MaxSAT in which the SAT-part is handled using PySAT and
 the hitting set is solved using an Ising machine in the Fixstars Amplify cloud.
 
@@ -29,5 +29,26 @@ first:
   amplify token must be specified.
   
 The *settings* section contains general settings:
+- mode: The Ising machine to be used, either `fixstar` or `gruobi`.
 - annealing_time: The time the Ising machine has per call to solve an hitting
   set instance (in seconds).
+
+# Running the Solver
+
+Execute the program with:
+```
+python main.py -c <my_config.yaml> < <foo.wcnf>
+```
+or
+```
+python main.py -c <my_config.yaml> -f <foo.wcnf>
+```
+
+# Input Format
+
+The solver supports the new MaxSAT format introduced in the MaxSAT
+Evaluation 2022 ([`.wcnf`][wcnf]). The folder `examples` contains some
+examples to play around.
+
+[wcnf]: https://maxsat-evaluations.github.io/2023/rules.html#input
+
