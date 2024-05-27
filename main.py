@@ -48,7 +48,7 @@ if __name__ == "__main__":
         if line.startswith(('c', 'p')):
             continue # Skip comments and problem lines.
 
-        # Weight and clause. Update free next free variable.
+        # Weight and clause. Update next free variable.
         w, c = line.split(" ")[0], [int(x) for x in line.split(" ")[1:-1]]
         free = max(free, max(map(lambda l: abs(l), c)))
 
@@ -89,8 +89,7 @@ if __name__ == "__main__":
                 print("v", end="")
             print(f" {l}", end="")
         print("\nc")
-        
-    
+            
     print(f"c Solved in {(time.time()-tstart):06.2f}s.\nc")
 
     
