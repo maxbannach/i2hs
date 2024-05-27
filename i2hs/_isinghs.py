@@ -124,8 +124,6 @@ class Hypergraph:
             result = self._solve_with_fixstar(model, mapping)
         elif self.config['settings']['mode'] == "gurobi":
             result = self._solve_with_gurobi(model, mapping)
-        elif self.config['settings']['mode'] == "external":
-            result = self._solve_with_external_ipu(model, mapping)
         else:
             print("c Error: Unknown mode specified.")
             return []
@@ -137,7 +135,6 @@ class Hypergraph:
             lambda vq: vq[0],
             filter(lambda vq: vq[0] < self.n and result[vq[1]] > 0.0001, enumerate(result))
         ))
-
 
     def _solve_with_gurobi(self, model, mapping):
         client = GurobiClient(library_path=self.config['gurobi']['library_path'])
