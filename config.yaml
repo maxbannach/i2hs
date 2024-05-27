@@ -4,9 +4,6 @@ gurobi:
 amplify:
   token: "your_amplify_token_here"
 
-external:
-  cmd: "cmd to execute external IPU"
-
 settings:
-  mode: "fixstar" # Options: fixstar, gurobi, external
-  annealing_time: 1000 # in seconds
+  mode: "fixstar" # Options: fixstar, gurobi
+  annealing_time: 10 # in seconds

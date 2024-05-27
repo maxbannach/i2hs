@@ -1,5 +1,5 @@
 from datetime import timedelta
-import tempfile, subprocess, os
+import tempfile, subprocess, os, heapq
 from amplify import (
     VariableGenerator,
     greater_equal,
@@ -31,8 +31,11 @@ class Hypergraph:
 
     def get_weight(self, v):
         return self.weights[v]
+    
+    def compute_hs(self, heuristic = False):
+        if heuristic:
+            return self._hs_simple()
         
-    def compute_hs(self):
         # end of recursion
         if len(self.edges) == 0:
             return []
@@ -44,7 +47,7 @@ class Hypergraph:
         # ensure to select at least one vertex
         if len(result) == 0:
             result.append( self.edges[0][0] )
-        
+                    
         # repair it if necessary
         unhit = []
         for e in self.edges:
@@ -56,11 +59,38 @@ class Hypergraph:
             for e in unhit:
                 h.add_edge(e)
             for v in h.compute_hs():
-                result.add(v)
+                result.append(v)
 
         # done
         return result
-        
+
+    def _hs_simple(self):
+        result = []
+        watch = {}
+        for v in range(self.n):
+            watch[v] = set()
+        for (i,e) in enumerate(self.edges):
+            for v in e:
+                watch[v].add(i)
+                
+        queue = []
+        for v in range(self.n):
+            heapq.heappush(queue, (-len(watch[v]), v))
+
+        while len(queue) > 0:
+            (deg, v) = heapq.heappop(queue)
+            if -deg != len(watch[v]):
+                continue
+            if deg == 0:
+                break
+            result.append(v)
+            for i in watch[v].copy():
+                for w in self.edges[i]:
+                    watch[w].remove(i)
+                    heapq.heappush(queue, (-len(watch[w]), w))
+        return result
+            
+    
     def _create_model(self):
         rho = sum(map(lambda x: abs(x), self.weights)) + 1
 
@@ -68,7 +98,7 @@ class Hypergraph:
         gen = VariableGenerator()
         q   = gen.array("Binary", self.n)
         obj = self.weights * q
-
+        
         # at least one constraint for every edge
         constraints = None
         for e in self.edges:            
@@ -102,7 +132,7 @@ class Hypergraph:
 
         if self.config['settings']['mode'] != "external":
             result = result.best.values
-        
+
         return list(map(
             lambda vq: vq[0],
             filter(lambda vq: vq[0] < self.n and result[vq[1]] > 0.0001, enumerate(result))
@@ -121,46 +151,6 @@ class Hypergraph:
         client.parameters.timeout = timedelta(seconds=self.config['settings']['annealing_time'])
         client.parameters.num_gpus = 1
         return solve(model, client)
-
-    def _solve_with_external_ipu(self, model, mapping):    
-        # Write QUBO to a temporary file.
-        with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as temp_file:
-            temp_file.write(self._model_to_text(model))
-            temp_file.flush()
-
-        try:
-            result = subprocess.run(
-                self.config['external']['cmd']
-                + " "
-                + format(f"{self.config['settings']['annealing_time']}")
-                + " < " + temp_file.name,
-                shell=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE                
-            )
-            output = result.stdout
-            assignment = []
-            for line in output.splitlines():
-                if line.startswith("v"):
-                    for x in map(int, line.split(" ")[1:]):
-                        assignment.append(x)
-                       
-        except subprocess.CalledProcessError as e:
-            print("c Error executing the external IPU:", e)
-            sys.exit(1)
-        finally:
-            temp_file.close()
-            os.remove(temp_file.name)
-
-        return assignment
-
-    def _model_to_text(self, model):
-        buffer = []
-        terms = model.to_unconstrained_poly().as_dict()
-        for t in terms:
-            if len(t) == 1:
-                buffer.append(format(f"{terms[t]} {t[0]+1} 0"))
-            elif len(t) == 2:
-                buffer.append(f"{terms[t]} {t[0]+1} {t[1]+1} 0")
-        return "\n".join(buffer)
     
     def __str__(self):
         buffer = []

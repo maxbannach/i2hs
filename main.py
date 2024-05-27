@@ -19,8 +19,6 @@ def arguments():
     parser.add_argument('--version', action='version', version='%(prog)s {0}'.format(__version__))
     parser.add_argument("-f", "--file", type=argparse.FileType("r"), default=sys.stdin, help="Input formula (as DIMACS2022 wcnf). Default is stdin.")
     parser.add_argument("-c", "--config", type=str, default="config.yaml", help="Path to the configuration file. Default is config.yaml.")
-    parser.add_argument("--hs", action='store_true', help="Reads a hypergraph and computes an hitting set.")
-
     return parser.parse_args()
             
 def load_config(path):
@@ -39,30 +37,6 @@ if __name__ == "__main__":
     print(f"c Gurobi Library: {config['gurobi']['library_path']}")
     print(f"c Amplify Token:  {config['amplify']['token']}")
     print("c")
-
-    if args.hs:
-        h = None
-        for (i,line) in enumerate(args.file):
-            if i == 0:
-                n, m = map(int, line.split())
-                h = Hypergraph(n, config)
-                for v in range(n):
-                    h.set_weight(v,1)
-            else:
-                h.add_edge( list(map(int, line.split()))[1:] )
-        hs = h.compute_hs();
-        print(f"o {len(hs)}")
-        for v in range(n):
-            if v % 25 == 0:
-                if v > 0:
-                    print()
-                print("v", end="")
-            if v in hs:
-                print(f" {v+1}", end="")
-            else:
-                print(f" {-(v+1)}", end="")
-        print("\nc")        
-        sys.exit(1)
     
     section("Parsing Input")
     tstart = time.time()    

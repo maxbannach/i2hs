@@ -1,6 +1,7 @@
 from i2hs import Hypergraph, BiMap
 from pysat.solvers import Solver as SATSolver
 
+
 class Solver:
     __slots__ = 'phi', 'relaxation', 'hypergraph', 'mapping'
     
@@ -16,12 +17,25 @@ class Solver:
     def run(self):
         relaxation_vars = set(map(lambda v: v[0], self.relaxation))
         satsolver = SATSolver(name='g3', bootstrap_with = self.phi.clauses )
-
+        
         while True:
-            hittingset = set( map(lambda v: self.mapping.get_key(v), self.hypergraph.compute_hs()) )
+            hittingset = set( map(lambda v: self.mapping.get_key(v), self.hypergraph.compute_hs(heuristic=True)) )
             assumption = relaxation_vars.difference(hittingset)
+            
             if satsolver.solve( assumptions = assumption ):
-                break
+                print("c calling the IPU")
+                hittingset = set( map(lambda v: self.mapping.get_key(v), self.hypergraph.compute_hs()) )
+                assumption = relaxation_vars.difference(hittingset)
+                if satsolver.solve( assumptions = assumption ):
+                    break
+                else:
+                    core = satsolver.get_core()
+                    if core is None:
+                        break
+                    self.hypergraph.add_edge(
+                        list(map(lambda v:self.mapping.get_value(v), core))
+                    )
+                                                
             else:            
                 core = satsolver.get_core()
                 if core is None:
@@ -29,7 +43,7 @@ class Solver:
                 self.hypergraph.add_edge(
                     list(map(lambda v:self.mapping.get_value(v), core))
                 )
-    
+                
         model = satsolver.get_model()
         if model:
             assignment = model[:len(model)-len(relaxation_vars)]
