@@ -120,7 +120,7 @@ class Hypergraph:
         return imodel, mapping
 
     def _solve_model(self, model, mapping):
-        if self.config['settings']['mode'] == "fixstar":
+        if self.config['settings']['mode'] == "fixstars":
             result = self._solve_with_fixstar(model, mapping)
         elif self.config['settings']['mode'] == "gurobi":
             result = self._solve_with_gurobi(model, mapping)

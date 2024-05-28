@@ -5,5 +5,5 @@ amplify:
   token: "your_amplify_token_here"
 
 settings:
-  mode: "fixstar" # Options: fixstar, gurobi
+  mode: "fixstars" # Options: fixstars, gurobi
   annealing_time: 10 # in seconds
