@@ -1,19 +1,28 @@
+import time
 from i2hs import Hypergraph, BiMap
 from pysat.solvers import Solver as SATSolver
 
 
 class Solver:
-    __slots__ = 'phi', 'relaxation', 'hypergraph', 'mapping'
+    __slots__ = 'phi', 'relaxation', 'hypergraph', 'mapping', 'sattime'
     
     def __init__(self, phi, relaxation, config):
         self.phi        = phi
         self.relaxation = relaxation
         self.hypergraph = Hypergraph(len(relaxation), config)
         self.mapping    = BiMap()
+        self.sattime    = 0
         for (i,(v,weight)) in enumerate(relaxation):
             self.mapping.insert(v,i)
             self.hypergraph.set_weight(i, weight)
-                        
+
+    def _run_satsolver(self, satsolver, assumption):
+        tstart        = time.time()
+        satresult     = satsolver.solve( assumptions = assumption )
+        self.sattime += (time.time() - tstart)
+        return satresult
+
+            
     def run(self):
         relaxation_vars = set(map(lambda v: v[0], self.relaxation))
         satsolver = SATSolver(name='g3', bootstrap_with = self.phi.clauses )
@@ -21,12 +30,10 @@ class Solver:
         while True:
             hittingset = set( map(lambda v: self.mapping.get_key(v), self.hypergraph.compute_hs(heuristic=True)) )
             assumption = relaxation_vars.difference(hittingset)
-            
-            if satsolver.solve( assumptions = assumption ):
-                print("c calling the IPU")
+            if self._run_satsolver(satsolver, assumption):
                 hittingset = set( map(lambda v: self.mapping.get_key(v), self.hypergraph.compute_hs()) )
-                assumption = relaxation_vars.difference(hittingset)
-                if satsolver.solve( assumptions = assumption ):
+                assumption = relaxation_vars.difference(hittingset)                
+                if self._run_satsolver(satsolver, assumption):
                     break
                 else:
                     core = satsolver.get_core()

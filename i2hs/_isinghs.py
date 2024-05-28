@@ -1,3 +1,4 @@
+import time
 from datetime import timedelta
 import tempfile, subprocess, os, heapq
 from amplify import (
@@ -12,13 +13,16 @@ from amplify import (
 )
 
 class Hypergraph:
-    __slots__ = 'n', 'edges', 'weights', 'config'
+    __slots__ = 'n', 'edges', 'weights', 'config', 'ipucalls', 'encodingtime', 'annealingtime'
     
     def __init__(self, n, config):
-        self.n       = n
-        self.edges   = []
-        self.weights = [0] * n
-        self.config  = config
+        self.n             = n
+        self.edges         = []
+        self.weights       = [0] * n
+        self.config        = config
+        self.ipucalls      = 0
+        self.encodingtime  = 0
+        self.annealingtime = 0
 
     def add_edge(self, e):
         self.edges.append(e)
@@ -35,7 +39,8 @@ class Hypergraph:
     def compute_hs(self, heuristic = False):
         if heuristic:
             return self._hs_simple()
-        
+        self.ipucalls += 1
+                
         # end of recursion
         if len(self.edges) == 0:
             return []
@@ -92,6 +97,7 @@ class Hypergraph:
             
     
     def _create_model(self):
+        tstart = time.time()
         rho = sum(map(lambda x: abs(x), self.weights)) + 1
 
         # objective: minimize the sum of weigts of selected variables
@@ -117,20 +123,25 @@ class Hypergraph:
         # transform it into an unconstrainted problem
         bq = AcceptableDegrees(objective={"Binary": "Quadratic"})
         imodel, mapping = model.to_intermediate_model(bq)
+
+        # done
+        self.encodingtime += (time.time() - tstart)
         return imodel, mapping
 
     def _solve_model(self, model, mapping):
+        tstart = time.time()
+        print("c Calling the IPU ...", end = "", flush = True)
         if self.config['settings']['mode'] == "fixstars":
             result = self._solve_with_fixstar(model, mapping)
         elif self.config['settings']['mode'] == "gurobi":
             result = self._solve_with_gurobi(model, mapping)
         else:
             print("c Error: Unknown mode specified.")
-            return []
-
-        if self.config['settings']['mode'] != "external":
-            result = result.best.values
-
+            sys.exit(1)
+        print(f" {(time.time()-tstart):06.2f}s.")
+        self.annealingtime += (time.time() - tstart)            
+            
+        result = result.best.values
         return list(map(
             lambda vq: vq[0],
             filter(lambda vq: vq[0] < self.n and result[vq[1]] > 0.0001, enumerate(result))

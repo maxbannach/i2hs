@@ -66,20 +66,23 @@ if __name__ == "__main__":
         phi.append(c)
         relaxation.append( (free,w) )
     print(f" {(time.time()-tstart):06.2f}s.\nc")
-
+    print(f"c #Variables:   {free-len(relaxation)}")
+    print(f"c #Clauses:     {len(phi.clauses)}")
+    print(f"c #Relaxsation: {len(relaxation)}")
+    print("c")
+    
     section("Invoking Ising Machine")
+    sys.stdout.flush()
     tstart = time.time()    
     solver = Solver(phi, relaxation, config)
     result = solver.run()
+    print("c")
 
     # Output the result.
     if result is None:
         print(f"s UNSATISFIABLE")
     else:
         assignment, cost, fitness = result
-        print(f"c Fitness:    {fitness}")
-        print(f"c Cost:       {cost}")
-        print("c")
         print(f"s SATISFIABLE")
         print(f"o {cost}")
         for (i,l) in enumerate( assignment ):
@@ -89,7 +92,16 @@ if __name__ == "__main__":
                 print("v", end="")
             print(f" {l}", end="")
         print("\nc")
-            
-    print(f"c Solved in {(time.time()-tstart):06.2f}s.\nc")
+
+    section("Statistics")        
+    print(f"c Solved the problem in   {(time.time()-tstart):06.2f}s")
+    print(f"c --> SAT Time:           {solver.sattime:06.2f}s")
+    print(f"c --> Encoding Time:      {solver.hypergraph.encodingtime:06.2f}s")
+    print(f"c --> Annealing Time:     {solver.hypergraph.annealingtime:06.2f}s")
+    print(f"c --> #IPU Calls:         {solver.hypergraph.ipucalls}")
+    print("c")
+    print(f"c Fitness:    {fitness}")
+    print(f"c Cost:       {cost}")
+    
 
     
