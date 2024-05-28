@@ -6,6 +6,12 @@ __version__ = "1.0.0"
 __author__  = "Max Bannach"
 
 def section(s):
+    """
+    Simple function to print a section separator in the terminal.
+
+    Parameters:
+    s (str): The headline.
+    """
     print(f"c ---- [ {s} ] ----", end="")
     remaining = 80 - 16 - len(s)
     for _ in range(remaining):
@@ -13,6 +19,9 @@ def section(s):
     print("\nc")
 
 def arguments():
+    """
+    Wrapper to parse the programs arguments.
+    """
     parser = argparse.ArgumentParser(
         description='A simple MaxSAT solver based on Implicit Ising Hitting Set.'
     )
@@ -22,6 +31,21 @@ def arguments():
     return parser.parse_args()
             
 def load_config(path):
+    """
+    Load the config.yaml file from the specified path.
+
+    This function reads a YAML file and returns its content as a Python dictionary.
+
+    Parameters:
+    path (str): The path to the YAML configuration file.
+
+    Returns:
+    dict: The content of the YAML file as a dictionary.
+
+    Raises:
+    FileNotFoundError: If the file at the specified path does not exist.
+    yaml.YAMLError: If there is an error while parsing the YAML file.
+    """
     with open(path, 'r') as file:
         config = yaml.safe_load(file)
     return config
