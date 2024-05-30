@@ -9,6 +9,7 @@ from amplify import (
     Model,
     GurobiClient,
     FixstarsClient,
+    LeapHybridSamplerClient,
     solve
 )
 
@@ -217,6 +218,8 @@ class Hypergraph:
         print("c Calling the IPU ...", end = "", flush = True)
         if self.config['settings']['mode'] == "fixstars":
             result = self._solve_with_fixstars(model, mapping)
+        elif self.config['settings']['mode'] == "dwave":
+            result = self._solve_with_dwave(model, mapping)
         elif self.config['settings']['mode'] == "gurobi":
             result = self._solve_with_gurobi(model, mapping)
         else:
@@ -250,6 +253,17 @@ class Hypergraph:
         client.token = self.config['amplify']['token']
         client.parameters.timeout = timedelta(seconds=self.config['settings']['annealing_time'])
         client.parameters.num_gpus = 1
+        return solve(model, client)
+
+    def _solve_with_dwave(self, model, mapping):
+        """
+        Auxiliary method that solves the QUBO model using the D-Wave Leap hybrid algorithm.
+        The D-Wave token must be set in the configuration file in order to use this method.
+        """
+        client = LeapHybridSamplerClient()
+        client.token = self.config['dwave']['token']
+        client.solver = "hybrid_binary_quadratic_model_version2"
+        client.parameters.time_limit = float(self.config['settings']['annealing_time'])
         return solve(model, client)
     
     def __str__(self):

@@ -60,6 +60,7 @@ if __name__ == "__main__":
     config = load_config(args.config)
     print(f"c Gurobi Library: {config['gurobi']['library_path']}")
     print(f"c Amplify Token:  {config['amplify']['token']}")
+    print(f"c D-Wave Token:   {config['dwave']['token']}")
     print("c")
     
     section("Parsing Input")

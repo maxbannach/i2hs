@@ -4,6 +4,9 @@ gurobi:
 amplify:
   token: "your_amplify_token_here"
 
+dwave:
+  token: "your_dwave_token_here"
+
 settings:
-  mode: "fixstars" # Options: fixstars, gurobi
+  mode: "fixstars" # Options: fixstars, gurobi, dwave
   annealing_time: 10 # in seconds

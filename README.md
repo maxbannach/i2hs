@@ -27,9 +27,11 @@ first:
   installed on the machine).
 - If an Ising machine in the Fixstars Amplify cloud is used, the
   amplify token must be specified.
+- If the D-Wave System is used as Ising machine, the
+  dwave token must be specified.
   
 The *settings* section contains general settings:
-- mode: The Ising machine to be used, either `fixstars` or `gruobi`.
+- mode: The Ising machine to be used, either `fixstars`, `dwave`, or `gruobi`.
 - annealing_time: The time the Ising machine has per call to solve an hitting
   set instance (in seconds).
 
