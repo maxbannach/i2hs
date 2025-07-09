@@ -2,7 +2,7 @@ import sys, time, yaml, argparse
 from pysat.formula import CNF
 from i2hs import Hypergraph, Solver
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__  = "Max Bannach"
 
 def section(s):
@@ -60,6 +60,7 @@ if __name__ == "__main__":
     config = load_config(args.config)
     print(f"c Gurobi Library: {config['gurobi']['library_path']}")
     print(f"c Amplify Token:  {config['amplify']['token']}")
+    print(f"c Toshiba Token:  {config['toshiba']['token']}")
     print(f"c D-Wave Token:   {config['dwave']['token']}")
     print("c")
     

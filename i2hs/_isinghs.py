@@ -9,6 +9,7 @@ from amplify import (
     Model,
     GurobiClient,
     FixstarsClient,
+    ToshibaSQBM2Client,
     LeapHybridSamplerClient,
     solve
 )
@@ -218,6 +219,8 @@ class Hypergraph:
         print("c Calling the IPU ...", end = "", flush = True)
         if self.config['settings']['mode'] == "fixstars":
             result = self._solve_with_fixstars(model, mapping)
+        elif self.config['settings']['mode'] == 'toshiba':
+            result = self._solve_with_toshiba(model, mapping)
         elif self.config['settings']['mode'] == "dwave":
             result = self._solve_with_dwave(model, mapping)
         elif self.config['settings']['mode'] == "gurobi":
@@ -255,6 +258,16 @@ class Hypergraph:
         client.parameters.num_gpus = 1
         return solve(model, client)
 
+    def _solve_with_toshiba(self, model, mapping):
+        """
+        Auxiliary method that solves the QUBO model using the Toshiba SQBM+V2.
+        The toshiba token must be set in the configuration file in order to use this method.        
+        """
+        client = ToshibaSQBM2Client()
+        client.token = self.config['toshiba']['token']
+        client.parameters.timeout = timedelta(seconds=self.config['settings']['annealing_time'])
+        return solve(model, client)
+    
     def _solve_with_dwave(self, model, mapping):
         """
         Auxiliary method that solves the QUBO model using the D-Wave Leap hybrid algorithm.

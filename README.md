@@ -31,7 +31,7 @@ first:
   dwave token must be specified.
   
 The *settings* section contains general settings:
-- mode: The Ising machine to be used, either `fixstars`, `dwave`, or `gruobi`.
+- mode: The Ising machine to be used, either `fixstars`, `toshiba`, `dwave`, or `gurobi`.
 - annealing_time: The time the Ising machine has per call to solve an hitting
   set instance (in seconds).
 
