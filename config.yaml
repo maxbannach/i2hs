@@ -9,7 +9,9 @@ toshiba:
 
 dwave:
   token: "your_dwave_token_here"
+  solver: "platform_to_use"
+  runs:   "number_of_reads_in_advantage_systems"
 
 settings:
-  mode: "fixstars" # Options: fixstars, toshiba, gurobi, dwave
+  mode: "fixstars" # Options: fixstars, toshiba, gurobi, dwave, dwave_native
   annealing_time: 1 # in seconds

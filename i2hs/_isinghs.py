@@ -11,6 +11,7 @@ from amplify import (
     FixstarsClient,
     ToshibaSQBM2Client,
     LeapHybridSamplerClient,
+    DWaveSamplerClient,
     solve
 )
 
@@ -223,6 +224,8 @@ class Hypergraph:
             result = self._solve_with_toshiba(model, mapping)
         elif self.config['settings']['mode'] == "dwave":
             result = self._solve_with_dwave(model, mapping)
+        elif self.config['settings']['mode'] == "dwave_native":
+            result = self._solve_with_dwave_native(model, mapping)
         elif self.config['settings']['mode'] == "gurobi":
             result = self._solve_with_gurobi(model, mapping)
         else:
@@ -230,7 +233,7 @@ class Hypergraph:
             sys.exit(1)
         print(f" {(time.time()-tstart):06.2f}s.")
         self.annealingtime += (time.time() - tstart)            
-            
+        
         result = result.best.values
         return list(map(
             lambda vq: vq[0],
@@ -275,10 +278,21 @@ class Hypergraph:
         """
         client = LeapHybridSamplerClient()
         client.token = self.config['dwave']['token']
-        client.solver = "hybrid_binary_quadratic_model_version2"
+        client.solver = self.config['dwave']['solver']
         client.parameters.time_limit = float(self.config['settings']['annealing_time'])
         return solve(model, client)
-    
+
+    def _solve_with_dwave_native(self, model, mapping):
+        """
+        Auxiliary method that solves the QUBO model using the D-Wave Advantage System.
+        The D-Wave token must be set in the configuration file in order to use this method.
+        """
+        client = DWaveSamplerClient()
+        client.token = self.config['dwave']['token']
+        client.solver = self.config['dwave']['solver']
+        client.parameters.num_reads = self.config['dwave']['runs']
+        return solve(model, client)
+
     def __str__(self):
         """
         String representation of the hypergraph.
